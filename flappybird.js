@@ -69,15 +69,15 @@ window.onload = function () {
 
   // calls the function placePipes every 1500 milliseconds
   setInterval(placePipes, pipePeriod);
-  //listens for a key down and then calls the moveBIrd function
+  //listens for a key down and then calls the moveBird function
   document.addEventListener("keydown", moveBird);
 };
 
 function update() {
+  requestAnimationFrame(update);
   if (gameOver) {
     return;
   }
-  requestAnimationFrame(update);
 
   context.clearRect(0, 0, board.width, board.height);
 
@@ -87,7 +87,7 @@ function update() {
   bird.y = Math.max((bird.y += velocityY), 0);
   context.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
 
-  if (bird.y > boardHeight.height) {
+  if (bird.y > board.height) {
     // ends the game if the bird falls below the canvas
     gameOver = true;
   }
@@ -101,7 +101,8 @@ function update() {
     context.drawImage(pipe.img, pipe.x, pipe.y, pipe.width, pipe.height);
 
     if (!pipe.passed && bird.x > pipe.x + pipe.width) {
-      score += 1;
+      score += 0.5; // 0.5 because there are two pipes and score is counted twice each time
+      pipe.passed = true;
     }
     // console.log(i);
     if (detectCollision(bird, pipe)) {
@@ -109,10 +110,19 @@ function update() {
     }
   }
 
+  //clear pipes (if we do not clear the pipes after they leave the screen over time the array of pipes will get massive and cause memory issues)
+  while (pipeArray.length > 0 && pipeArray[0].x < -pipeWidth) pipeArray.shift(); //removes first element from the array
+
   // score
   context.fillStyle = "white";
   context.font = "45px sans-serif";
-  context.fillText = (score, 5, 45);
+  context.fillText(score, 5, 45);
+
+  if (gameOver) {
+    context.fillStyle = "white";
+    context.font = "45px sans-serif";
+    context.fillText("GAME OVER", 5, 90);
+  }
 }
 
 function placePipes() {
@@ -153,6 +163,13 @@ function moveBird(e) {
   if (e.code == "Space" || e.code == "ArrowUp") {
     // jump
     velocityY = -6;
+
+    if (gameOver) {
+      bird.y = birdY;
+      pipeArray = [];
+      score = 0;
+      gameOver = false;
+    }
   }
 }
 
